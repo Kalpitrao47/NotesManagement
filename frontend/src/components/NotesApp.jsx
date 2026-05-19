@@ -160,7 +160,7 @@ function NoteModal({ note, onClose, onSave, loading }) {
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}
       onClick={e => e.target === e.currentTarget && onClose()}>
       <div style={{
-        background: "white", borderRadius: "var(--border-radius-lg)",
+        background: "white", borderRadius: "10px",
         border: "0.5px solid var(--color-border-secondary)", width: "100%", maxWidth: 640,
         maxHeight: "85vh", display: "flex", flexDirection: "column", overflow: "hidden",
       }}>
@@ -274,7 +274,8 @@ function NoteCard({ note, onEdit, onDelete, onArchive, onRestore, onPermanentDel
         display: "flex", flexDirection: "column", gap: 10,
         position: "relative", overflow: "hidden",
       }}
-      onClick={() => !view === "trash" && onEdit(note)}
+      // onClick={() => !view === "trash" && onEdit(note)}
+      onClick={() => view !== "trash" && onEdit(note)}
     >
       {/* Archive / Deleted badges */}
       {note.archived && (
