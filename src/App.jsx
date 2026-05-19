@@ -1,12 +1,7 @@
-import './App.css'
+import NotesApp from "./components/NotesApp";
 
 function App() {
-
-  return (
-    <>
-    <h1>Hello World.</h1>
-    </>
-  )
+  return <NotesApp />;
 }
 
-export default App
+export default App;
