@@ -320,11 +320,11 @@ function NoteCard({ note, onEdit, onDelete, onArchive, onRestore, onPermanentDel
           {view === "trash" ? (
             <>
               {/* <ActionBtn icon={<RotateCcw size={12} />} label="Restore" onClick={e => { e.stopPropagation(); onRestore(note._id); }} /> */}
-              <ActionBtn 
-  icon={<RotateCcw size={12} />} 
-  label="Restore" 
-  onClick={e => { e.stopPropagation(); onRestore(note._id); }} 
-/>
+              <ActionBtn
+                icon={<RotateCcw size={12} />}
+                label="Restore"
+                onClick={e => { e.stopPropagation(); onRestore(note._id); }}
+              />
               <ActionBtn icon={<Trash2 size={12} />} label="Delete forever" danger onClick={e => { e.stopPropagation(); onPermanentDelete(note._id); }} />
             </>
           ) : (
@@ -395,7 +395,14 @@ export default function NotesApp() {
   const [fetching, setFetching] = useState(true);
   const [toasts, setToasts] = useState([]);
   const [theme, setTheme] = useState("light");
-const toggleTheme = () => setTheme(t => t === "light" ? "dark" : "light");
+  const [visibleCount, setVisibleCount] = useState(12);
+
+  // Reset when view or search changes
+  useEffect(() => { setVisibleCount(12); }, [view, search]);
+
+  
+
+  const toggleTheme = () => setTheme(t => t === "light" ? "dark" : "light");
   let toastId = useRef(0);
 
   const addToast = useCallback((message, type = "info") => {
@@ -448,25 +455,25 @@ const toggleTheme = () => setTheme(t => t === "light" ? "dark" : "light");
   // }, [addToast]);
 
   const loadNotes = useCallback(async () => {
-  try {
-    setFetching(true);
+    try {
+      setFetching(true);
 
-    const data = await getNotes();
+      const data = await getNotes();
 
-    const formattedNotes = data.map(note => ({
-      ...note,
-      content: Array.isArray(note.content)
-        ? note.content.join("\n")
-        : note.content || "",
-    }));
+      const formattedNotes = data.map(note => ({
+        ...note,
+        content: Array.isArray(note.content)
+          ? note.content.join("\n")
+          : note.content || "",
+      }));
 
-    setNotes(formattedNotes); // ← keep all notes, including deleted ones
-  } catch (error) {
-    addToast(error.message, "error");
-  } finally {
-    setFetching(false);
-  }
-}, [addToast]);
+      setNotes(formattedNotes); // ← keep all notes, including deleted ones
+    } catch (error) {
+      addToast(error.message, "error");
+    } finally {
+      setFetching(false);
+    }
+  }, [addToast]);
 
   useEffect(() => { loadNotes(); }, [loadNotes]);
 
@@ -477,6 +484,8 @@ const toggleTheme = () => setTheme(t => t === "light" ? "dark" : "light");
     if (view === "archived") return !n.deleted && n.archived && matchSearch;
     return !n.deleted && !n.archived && matchSearch;
   });
+  const visibleNotes = filteredNotes.slice(0, visibleCount);
+  const hasMore = filteredNotes.length > visibleCount; 
 
   const counts = {
     all: notes.filter(n => !n.deleted && !n.archived).length,
@@ -553,30 +562,30 @@ const toggleTheme = () => setTheme(t => t === "light" ? "dark" : "light");
   // };
 
   const handleDelete = async (id) => {
-  try {
-    const note = notes.find(n => n._id === id);
+    try {
+      const note = notes.find(n => n._id === id);
 
-    const updated = await updateNote(id, {
-      title: note.title,
-      content: note.content,
-      archived: note.archived,
-      deleted: true,
-      // deletedAt: new Date().toISOString(),
-    });
+      const updated = await updateNote(id, {
+        title: note.title,
+        content: note.content,
+        archived: note.archived,
+        deleted: true,
+        // deletedAt: new Date().toISOString(),
+      });
 
-    const formattedNote = {
-      ...updated,
-      content: Array.isArray(updated.content)
-        ? updated.content.join("\n")
-        : updated.content || "",
-    };
+      const formattedNote = {
+        ...updated,
+        content: Array.isArray(updated.content)
+          ? updated.content.join("\n")
+          : updated.content || "",
+      };
 
-    setNotes(ns => ns.map(n => n._id === id ? formattedNote : n));
-    addToast("Note moved to trash.", "info");
-  } catch (e) {
-    addToast(e.message, "error");
-  }
-};
+      setNotes(ns => ns.map(n => n._id === id ? formattedNote : n));
+      addToast("Note moved to trash.", "info");
+    } catch (e) {
+      addToast(e.message, "error");
+    }
+  };
   // const handleArchive = async (id) => {
   //   try {
   //     const updated = await api.toggleArchive(id);
@@ -595,56 +604,56 @@ const toggleTheme = () => setTheme(t => t === "light" ? "dark" : "light");
 
 
   const handleArchive = async (id) => {
-  try {
-    const note = notes.find(n => n._id === id);
+    try {
+      const note = notes.find(n => n._id === id);
 
-    const updated = await updateNote(id, {
-      title: note.title,
-      content: note.content,
-      deleted: note.deleted,
-      deletedAt: note.deletedAt,
-      archived: !note.archived,
-    });
+      const updated = await updateNote(id, {
+        title: note.title,
+        content: note.content,
+        deleted: note.deleted,
+        deletedAt: note.deletedAt,
+        archived: !note.archived,
+      });
 
-    const formattedNote = {
-      ...updated,
-      content: Array.isArray(updated.content)
-        ? updated.content.join("\n")
-        : updated.content || "",
-    };
+      const formattedNote = {
+        ...updated,
+        content: Array.isArray(updated.content)
+          ? updated.content.join("\n")
+          : updated.content || "",
+      };
 
-    setNotes(ns => ns.map(n => n._id === id ? formattedNote : n));
-    addToast(!note.archived ? "Note archived." : "Note unarchived.", "success");
-  } catch (e) {
-    addToast(e.message, "error");
-  }
-};
+      setNotes(ns => ns.map(n => n._id === id ? formattedNote : n));
+      addToast(!note.archived ? "Note archived." : "Note unarchived.", "success");
+    } catch (e) {
+      addToast(e.message, "error");
+    }
+  };
 
-const handleRestore = async (id) => {
-  try {
-    const note = notes.find(n => n._id === id);
+  const handleRestore = async (id) => {
+    try {
+      const note = notes.find(n => n._id === id);
 
-    const updated = await updateNote(id, {
-      title: note.title,
-      content: note.content,
-      archived: note.archived,
-      deleted: false,
-      // deletedAt: null,
-    });
+      const updated = await updateNote(id, {
+        title: note.title,
+        content: note.content,
+        archived: note.archived,
+        deleted: false,
+        // deletedAt: null,
+      });
 
-    const formattedNote = {
-      ...updated,
-      content: Array.isArray(updated.content)
-        ? updated.content.join("\n")
-        : updated.content || "",
-    };
+      const formattedNote = {
+        ...updated,
+        content: Array.isArray(updated.content)
+          ? updated.content.join("\n")
+          : updated.content || "",
+      };
 
-    setNotes(ns => ns.map(n => n._id === id ? formattedNote : n));
-    addToast("Note restored.", "success");
-  } catch (e) {
-    addToast(e.message, "error");
-  }
-};
+      setNotes(ns => ns.map(n => n._id === id ? formattedNote : n));
+      addToast("Note restored.", "success");
+    } catch (e) {
+      addToast(e.message, "error");
+    }
+  };
   // const handlePermanentDelete = async (id) => {
   //   try {
   //     await api.permanentDelete(id);
@@ -654,17 +663,17 @@ const handleRestore = async (id) => {
   // };
 
   // ── Nav items ──
-  
+
   const handlePermanentDelete = async (id) => {
-  try {
-    await permanentDelete(id);
-    setNotes(ns => ns.filter(n => n._id !== id));
-    addToast("Note permanently deleted.", "info");
-  } catch (e) {
-    addToast(e.message, "error");
-  }
-};
-  
+    try {
+      await permanentDelete(id);
+      setNotes(ns => ns.filter(n => n._id !== id));
+      addToast("Note permanently deleted.", "info");
+    } catch (e) {
+      addToast(e.message, "error");
+    }
+  };
+
   const navItems = [
     { key: "all", label: "Notes", icon: FileText, count: counts.all },
     { key: "archived", label: "Archived", icon: Archive, count: counts.archived },
@@ -802,34 +811,34 @@ const handleRestore = async (id) => {
         </div> */}
         <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 12 }}>
 
-  {/* Theme Toggle */}
-  <button
-    onClick={toggleTheme}
-    style={{
-      display: "flex", alignItems: "center", gap: 8, width: "100%",
-      padding: "8px 10px", borderRadius: "var(--border-radius-md)",
-      border: "0.5px solid var(--color-border-secondary)",
-      background: "var(--color-background-secondary)",
-      color: "var(--color-text-secondary)",
-      fontSize: 13, fontWeight: 400, cursor: "pointer",
-      transition: "background 0.12s ease",
-    }}
-    onMouseEnter={e => e.currentTarget.style.background = "var(--color-background-tertiary)"}
-    onMouseLeave={e => e.currentTarget.style.background = "var(--color-background-secondary)"}
-  >
-    {theme === "light" ? <Moon size={14} /> : <Sun size={14} />}
-    {theme === "light" ? "Dark Mode" : "Light Mode"}
-  </button>
+          {/* Theme Toggle */}
+          <button
+            onClick={toggleTheme}
+            style={{
+              display: "flex", alignItems: "center", gap: 8, width: "100%",
+              padding: "8px 10px", borderRadius: "var(--border-radius-md)",
+              border: "0.5px solid var(--color-border-secondary)",
+              background: "var(--color-background-secondary)",
+              color: "var(--color-text-secondary)",
+              fontSize: 13, fontWeight: 400, cursor: "pointer",
+              transition: "background 0.12s ease",
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = "var(--color-background-tertiary)"}
+            onMouseLeave={e => e.currentTarget.style.background = "var(--color-background-secondary)"}
+          >
+            {theme === "light" ? <Moon size={14} /> : <Sun size={14} />}
+            {theme === "light" ? "Dark Mode" : "Light Mode"}
+          </button>
 
-  {/* Info */}
-  <div style={{ paddingTop: 12, borderTop: "0.5px solid var(--color-border-tertiary)" }}>
-    <p style={{ margin: 0, fontSize: 10, color: "var(--color-text-tertiary)", lineHeight: 1.5 }}>
-      {notes.filter(n => !n.deleted && !n.archived).length} active · {notes.filter(n => n.deleted).length} in trash
-    </p>
-    <p style={{ margin: "4px 0 0", fontSize: 10, color: "var(--color-text-tertiary)" }}>Trash clears after 24h</p>
-  </div>
+          {/* Info */}
+          <div style={{ paddingTop: 12, borderTop: "0.5px solid var(--color-border-tertiary)" }}>
+            <p style={{ margin: 0, fontSize: 10, color: "var(--color-text-tertiary)", lineHeight: 1.5 }}>
+              {notes.filter(n => !n.deleted && !n.archived).length} active · {notes.filter(n => n.deleted).length} in trash
+            </p>
+            <p style={{ margin: "4px 0 0", fontSize: 10, color: "var(--color-text-tertiary)" }}>Trash clears after 24h</p>
+          </div>
 
-</div>
+        </div>
       </aside>
 
       {/* ── Main ── */}
@@ -898,39 +907,70 @@ const handleRestore = async (id) => {
               )}
             />
           ) : (
+            // <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 12 }}>
+            //   {filteredNotes.map(note => (
+            //     // <NoteCard
+            //     //   // key={note.id}
+            //     //   key={note._id}
+            //     //   note={note}
+            //     //   view={view}
+            //     //   onEdit={handleOpenEdit}
+            //     //   onDelete={handleDelete}
+            //     //   onArchive={handleArchive}
+            //     //   onRestore={handleRestore}
+            //     //   onPermanentDelete={handlePermanentDelete}
+            //     // />
+            //     <NoteCard
+            //       key={note._id}
+            //       note={note}
+            //       view={view}
+            //       onEdit={handleOpenEdit}
+            //       onDelete={handleDelete}
+            //       onArchive={handleArchive}
+            //       onRestore={handleRestore}
+            //       onPermanentDelete={handlePermanentDelete}
+            //     />
+            //   ))}
+            // </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 12 }}>
-              {filteredNotes.map(note => (
-                // <NoteCard
-                //   // key={note.id}
-                //   key={note._id}
-                //   note={note}
-                //   view={view}
-                //   onEdit={handleOpenEdit}
-                //   onDelete={handleDelete}
-                //   onArchive={handleArchive}
-                //   onRestore={handleRestore}
-                //   onPermanentDelete={handlePermanentDelete}
-                // />
+              {visibleNotes.map(note => (
                 <NoteCard
-  key={note._id}
-  note={note}
-  view={view}
-  onEdit={handleOpenEdit}
-  onDelete={handleDelete}
-  onArchive={handleArchive}
-  onRestore={handleRestore}
-  onPermanentDelete={handlePermanentDelete}
-/>
+                  key={note._id}
+                  note={note}
+                  view={view}
+                  onEdit={handleOpenEdit}
+                  onDelete={handleDelete}
+                  onArchive={handleArchive}
+                  onRestore={handleRestore}
+                  onPermanentDelete={handlePermanentDelete}
+                />
               ))}
             </div>
           )}
-
+{hasMore && (
+  <div style={{ display: "flex", justifyContent: "center", marginTop: 24 }}>
+    <button
+      onClick={() => setVisibleCount(c => c + 12)}
+      style={{
+        display: "flex", alignItems: "center", gap: 6,
+        padding: "8px 20px", borderRadius: "var(--border-radius-md)",
+        border: "0.5px solid var(--color-border-secondary)",
+        background: "var(--color-background-primary)",
+        color: "var(--color-text-secondary)",
+        fontSize: 13, fontWeight: 500, cursor: "pointer",
+      }}
+    >
+      Load more · {filteredNotes.length - visibleCount} remaining
+    </button>
+  </div>
+)}
           {/* Search result count */}
           {search && filteredNotes.length > 0 && (
             <p style={{ margin: "16px 0 0", fontSize: 11, color: "var(--color-text-tertiary)", textAlign: "center" }}>
               {filteredNotes.length} result{filteredNotes.length !== 1 ? "s" : ""} for "{search}"
             </p>
           )}
+          
         </div>
       </main>
 
