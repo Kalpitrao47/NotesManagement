@@ -6,7 +6,9 @@ const mongoose = require('mongoose');
 const DB_URI = process.env.DB_URI
 const PORT = process.env.PORT
 app.use(express.json())
+const cors = require('cors')
 
+app.use(cors());
 const notesRouter = require('./router/notesRouter')
 
 app.use('/', notesRouter)
