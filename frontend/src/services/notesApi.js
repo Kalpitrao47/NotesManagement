@@ -60,3 +60,14 @@ export const updateNote = async (_id, noteData) => {
 
   return result.data;
 };
+
+export const permanentDelete = async (_id) => {
+  const response = await fetch(`http://localhost:6969/delete/notes/${_id}`, {
+    method: "DELETE",
+  });
+
+  if (!response.ok) throw new Error("Failed to permanently delete note");
+
+  const result = await response.json();
+  return result.data;
+};

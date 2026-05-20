@@ -3,7 +3,7 @@ import {
   Search, Plus, Trash2, Archive, FileText, RotateCcw, Edit2, X,
   Save, AlertCircle, Clock, ArchiveRestore, StickyNote
 } from "lucide-react";
-import { createNote, getNotes, updateNote } from "../services/notesApi";
+import { createNote, getNotes, permanentDelete, updateNote } from "../services/notesApi";
 
 // ═══════════════════════════════════════════════
 // MOCK API — in-memory REST simulation
@@ -44,11 +44,11 @@ const delay = (ms = 180) => new Promise(r => setTimeout(r, ms));
 //   },
 //   async updateNote(id, { title, content }) {
 //     await delay();
-//     const note = store.find(n => n.id === id);
+//     const note = store.find(n => n._id === id);
 //     if (!note) throw new Error("Note not found.");
 //     if (note.archived) throw new Error("Archived notes are read-only.");
 //     if (!title?.trim()) throw new Error("Note title is mandatory.");
-//     const dup = store.find(n => n.title.toLowerCase() === title.trim().toLowerCase() && n.id !== id && !n.deleted);
+//     const dup = store.find(n => n.title.toLowerCase() === title.trim().toLowerCase() && n._id !== id && !n.deleted);
 //     if (dup) throw new Error("A note with this title already exists.");
 //     note.title = title.trim();
 //     note.content = content || "";
@@ -57,7 +57,7 @@ const delay = (ms = 180) => new Promise(r => setTimeout(r, ms));
 //   },
 //   async deleteNote(id) {
 //     await delay();
-//     const note = store.find(n => n.id === id);
+//     const note = store.find(n => n._id === id);
 //     if (!note) throw new Error("Note not found.");
 //     note.deleted = true;
 //     note.deletedAt = new Date().toISOString();
@@ -66,7 +66,7 @@ const delay = (ms = 180) => new Promise(r => setTimeout(r, ms));
 //   },
 //   async restoreNote(id) {
 //     await delay();
-//     const note = store.find(n => n.id === id);
+//     const note = store.find(n => n._id === id);
 //     if (!note) throw new Error("Note not found.");
 //     note.deleted = false;
 //     note.deletedAt = null;
@@ -74,12 +74,12 @@ const delay = (ms = 180) => new Promise(r => setTimeout(r, ms));
 //   },
 //   async permanentDelete(id) {
 //     await delay();
-//     store = store.filter(n => n.id !== id);
+//     store = store.filter(n => n._id !== id);
 //     return { success: true };
 //   },
 //   async toggleArchive(id) {
 //     await delay();
-//     const note = store.find(n => n.id === id);
+//     const note = store.find(n => n._id === id);
 //     if (!note) throw new Error("Note not found.");
 //     note.archived = !note.archived;
 //     note.updatedAt = new Date().toISOString();
@@ -317,7 +317,12 @@ function NoteCard({ note, onEdit, onDelete, onArchive, onRestore, onPermanentDel
         <div style={{ display: "flex", gap: 4, opacity: hovered ? 1 : 0, transition: "opacity 0.15s ease" }}>
           {view === "trash" ? (
             <>
-              <ActionBtn icon={<RotateCcw size={12} />} label="Restore" onClick={e => { e.stopPropagation(); onRestore(note._id); }} />
+              {/* <ActionBtn icon={<RotateCcw size={12} />} label="Restore" onClick={e => { e.stopPropagation(); onRestore(note._id); }} /> */}
+              <ActionBtn 
+  icon={<RotateCcw size={12} />} 
+  label="Restore" 
+  onClick={e => { e.stopPropagation(); onRestore(note._id); }} 
+/>
               <ActionBtn icon={<Trash2 size={12} />} label="Delete forever" danger onClick={e => { e.stopPropagation(); onPermanentDelete(note._id); }} />
             </>
           ) : (
@@ -417,26 +422,47 @@ export default function NotesApp() {
   //   }
   // }, [addToast]);
 
+  // const loadNotes = useCallback(async () => {
+  //   try {
+  //     setFetching(true);
+
+  //     const data = await getNotes();
+
+  //     const formattedNotes = data.map(note => ({
+  //       ...note,
+  //       content: Array.isArray(note.content)
+  //         ? note.content.join("\n")
+  //         : note.content || ""
+  //     }));
+
+  //     setNotes(formattedNotes);
+  //   } catch (error) {
+  //     addToast(error.message, "error");
+  //   } finally {
+  //     setFetching(false);
+  //   }
+  // }, [addToast]);
+
   const loadNotes = useCallback(async () => {
-    try {
-      setFetching(true);
+  try {
+    setFetching(true);
 
-      const data = await getNotes();
+    const data = await getNotes();
 
-      const formattedNotes = data.map(note => ({
-        ...note,
-        content: Array.isArray(note.content)
-          ? note.content.join("\n")
-          : note.content || ""
-      }));
+    const formattedNotes = data.map(note => ({
+      ...note,
+      content: Array.isArray(note.content)
+        ? note.content.join("\n")
+        : note.content || "",
+    }));
 
-      setNotes(formattedNotes);
-    } catch (error) {
-      addToast(error.message, "error");
-    } finally {
-      setFetching(false);
-    }
-  }, [addToast]);
+    setNotes(formattedNotes); // ← keep all notes, including deleted ones
+  } catch (error) {
+    addToast(error.message, "error");
+  } finally {
+    setFetching(false);
+  }
+}, [addToast]);
 
   useEffect(() => { loadNotes(); }, [loadNotes]);
 
@@ -470,7 +496,7 @@ export default function NotesApp() {
           archived: modalNote.archived,
           deleted: modalNote.deleted,
         });
-        // setNotes(ns => ns.map(n => n.id === updated.id ? updated : n));
+        // setNotes(ns => ns.map(n => n._id === updated.id ? updated : n));
         const formattedNote = {
           ...updated,
           content: Array.isArray(updated.content)
@@ -514,39 +540,127 @@ export default function NotesApp() {
     }
   };
 
+  // const handleDelete = async (id) => {
+  //   try {
+  //     const updated = await api.deleteNote(id);
+  //     setNotes(ns => ns.map(n => n._id === id ? updated : n));
+  //     addToast("Note moved to trash.", "info");
+  //   } catch (e) { addToast(e.message, "error"); }
+  // };
+
   const handleDelete = async (id) => {
-    try {
-      const updated = await api.deleteNote(id);
-      setNotes(ns => ns.map(n => n.id === id ? updated : n));
-      addToast("Note moved to trash.", "info");
-    } catch (e) { addToast(e.message, "error"); }
-  };
+  try {
+    const note = notes.find(n => n._id === id);
+
+    const updated = await updateNote(id, {
+      title: note.title,
+      content: note.content,
+      archived: note.archived,
+      deleted: true,
+      // deletedAt: new Date().toISOString(),
+    });
+
+    const formattedNote = {
+      ...updated,
+      content: Array.isArray(updated.content)
+        ? updated.content.join("\n")
+        : updated.content || "",
+    };
+
+    setNotes(ns => ns.map(n => n._id === id ? formattedNote : n));
+    addToast("Note moved to trash.", "info");
+  } catch (e) {
+    addToast(e.message, "error");
+  }
+};
+  // const handleArchive = async (id) => {
+  //   try {
+  //     const updated = await api.toggleArchive(id);
+  //     setNotes(ns => ns.map(n => n._id === id ? updated : n));
+  //     addToast(updated.archived ? "Note archived." : "Note unarchived.", "success");
+  //   } catch (e) { addToast(e.message, "error"); }
+  // };
+
+  // const handleRestore = async (id) => {
+  //   try {
+  //     const updated = await api.restoreNote(id);
+  //     setNotes(ns => ns.map(n => n._id === id ? updated : n));
+  //     addToast("Note restored.", "success");
+  //   } catch (e) { addToast(e.message, "error"); }
+  // };
+
 
   const handleArchive = async (id) => {
-    try {
-      const updated = await api.toggleArchive(id);
-      setNotes(ns => ns.map(n => n.id === id ? updated : n));
-      addToast(updated.archived ? "Note archived." : "Note unarchived.", "success");
-    } catch (e) { addToast(e.message, "error"); }
-  };
+  try {
+    const note = notes.find(n => n._id === id);
 
-  const handleRestore = async (id) => {
-    try {
-      const updated = await api.restoreNote(id);
-      setNotes(ns => ns.map(n => n.id === id ? updated : n));
-      addToast("Note restored.", "success");
-    } catch (e) { addToast(e.message, "error"); }
-  };
+    const updated = await updateNote(id, {
+      title: note.title,
+      content: note.content,
+      deleted: note.deleted,
+      deletedAt: note.deletedAt,
+      archived: !note.archived,
+    });
 
-  const handlePermanentDelete = async (id) => {
-    try {
-      await api.permanentDelete(id);
-      setNotes(ns => ns.filter(n => n.id !== id));
-      addToast("Note permanently deleted.", "info");
-    } catch (e) { addToast(e.message, "error"); }
-  };
+    const formattedNote = {
+      ...updated,
+      content: Array.isArray(updated.content)
+        ? updated.content.join("\n")
+        : updated.content || "",
+    };
+
+    setNotes(ns => ns.map(n => n._id === id ? formattedNote : n));
+    addToast(!note.archived ? "Note archived." : "Note unarchived.", "success");
+  } catch (e) {
+    addToast(e.message, "error");
+  }
+};
+
+const handleRestore = async (id) => {
+  try {
+    const note = notes.find(n => n._id === id);
+
+    const updated = await updateNote(id, {
+      title: note.title,
+      content: note.content,
+      archived: note.archived,
+      deleted: false,
+      // deletedAt: null,
+    });
+
+    const formattedNote = {
+      ...updated,
+      content: Array.isArray(updated.content)
+        ? updated.content.join("\n")
+        : updated.content || "",
+    };
+
+    setNotes(ns => ns.map(n => n._id === id ? formattedNote : n));
+    addToast("Note restored.", "success");
+  } catch (e) {
+    addToast(e.message, "error");
+  }
+};
+  // const handlePermanentDelete = async (id) => {
+  //   try {
+  //     await api.permanentDelete(id);
+  //     setNotes(ns => ns.filter(n => n._id !== id));
+  //     addToast("Note permanently deleted.", "info");
+  //   } catch (e) { addToast(e.message, "error"); }
+  // };
 
   // ── Nav items ──
+  
+  const handlePermanentDelete = async (id) => {
+  try {
+    await permanentDelete(id);
+    setNotes(ns => ns.filter(n => n._id !== id));
+    addToast("Note permanently deleted.", "info");
+  } catch (e) {
+    addToast(e.message, "error");
+  }
+};
+  
   const navItems = [
     { key: "all", label: "Notes", icon: FileText, count: counts.all },
     { key: "archived", label: "Archived", icon: Archive, count: counts.archived },
@@ -684,17 +798,27 @@ export default function NotesApp() {
           ) : (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 12 }}>
               {filteredNotes.map(note => (
+                // <NoteCard
+                //   // key={note.id}
+                //   key={note._id}
+                //   note={note}
+                //   view={view}
+                //   onEdit={handleOpenEdit}
+                //   onDelete={handleDelete}
+                //   onArchive={handleArchive}
+                //   onRestore={handleRestore}
+                //   onPermanentDelete={handlePermanentDelete}
+                // />
                 <NoteCard
-                  // key={note.id}
-                  key={note._id}
-                  note={note}
-                  view={view}
-                  onEdit={handleOpenEdit}
-                  onDelete={handleDelete}
-                  onArchive={handleArchive}
-                  onRestore={handleRestore}
-                  onPermanentDelete={handlePermanentDelete}
-                />
+  key={note._id}
+  note={note}
+  view={view}
+  onEdit={handleOpenEdit}
+  onDelete={handleDelete}
+  onArchive={handleArchive}
+  onRestore={handleRestore}
+  onPermanentDelete={handlePermanentDelete}
+/>
               ))}
             </div>
           )}
