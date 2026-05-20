@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
   Search, Plus, Trash2, Archive, FileText, RotateCcw, Edit2, X,
-  Save, AlertCircle, Clock, ArchiveRestore, StickyNote
+  Save, AlertCircle, Clock, ArchiveRestore, StickyNote,
+  Moon,
+  Sun
 } from "lucide-react";
 import { createNote, getNotes, permanentDelete, updateNote } from "../services/notesApi";
 
@@ -392,6 +394,8 @@ export default function NotesApp() {
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
   const [toasts, setToasts] = useState([]);
+  const [theme, setTheme] = useState("light");
+const toggleTheme = () => setTheme(t => t === "light" ? "dark" : "light");
   let toastId = useRef(0);
 
   const addToast = useCallback((message, type = "info") => {
@@ -674,13 +678,81 @@ const handleRestore = async (id) => {
   };
 
   return (
-    <div style={{ display: "flex", height: "100vh", background: "var(--color-background-tertiary)", fontFamily: "var(--font-sans)", overflow: "hidden" }}>
-      <style>{`
+    <div data-theme={theme} style={{ display: "flex", height: "100vh", background: "var(--color-background-tertiary)", fontFamily: "var(--font-sans)", overflow: "hidden" }}>
+      {/* <style>{`
         @keyframes slideIn { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: translateX(0); } }
         * { box-sizing: border-box; }
         ::-webkit-scrollbar { width: 5px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: var(--color-border-secondary); border-radius: 4px; }
         input:focus, textarea:focus { border-color: var(--color-border-primary) !important; box-shadow: 0 0 0 2px rgba(0,0,0,0.04); }
-      `}</style>
+      `}</style> */}
+      <style>{`
+  [data-theme="light"] {
+    --color-background-primary: #ffffff;
+    --color-background-secondary: #f5f5f5;
+    --color-background-tertiary: #efefef;
+    --color-background-danger: #fff0f0;
+    --color-background-success: #f0fff4;
+    --color-background-warning: #fffbea;
+    --color-text-primary: #111111;
+    --color-text-secondary: #555555;
+    --color-text-tertiary: #999999;
+    --color-text-danger: #cc0000;
+    --color-text-success: #166534;
+    --color-text-warning: #92400e;
+    --color-border-primary: #111111;
+    --color-border-secondary: #dddddd;
+    --color-border-tertiary: #eeeeee;
+    --color-border-danger: #fca5a5;
+    --color-border-success: #86efac;
+    --color-border-warning: #fde68a;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --font-mono: "JetBrains Mono", "Fira Code", monospace;
+    --border-radius-md: 6px;
+    --border-radius-lg: 10px;
+  }
+
+  [data-theme="dark"] {
+    --color-background-primary: #1a1a1a;
+    --color-background-secondary: #242424;
+    --color-background-tertiary: #141414;
+    --color-background-danger: #2a1515;
+    --color-background-success: #132318;
+    --color-background-warning: #2a2010;
+    --color-text-primary: #eeeeee;
+    --color-text-secondary: #aaaaaa;
+    --color-text-tertiary: #666666;
+    --color-text-danger: #f87171;
+    --color-text-success: #4ade80;
+    --color-text-warning: #fbbf24;
+    --color-border-primary: #eeeeee;
+    --color-border-secondary: #333333;
+    --color-border-tertiary: #2a2a2a;
+    --color-border-danger: #7f1d1d;
+    --color-border-success: #14532d;
+    --color-border-warning: #78350f;
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --font-mono: "JetBrains Mono", "Fira Code", monospace;
+    --border-radius-md: 6px;
+    --border-radius-lg: 10px;
+  }
+
+  @keyframes slideIn { 
+    from { opacity: 0; transform: translateX(16px); } 
+    to { opacity: 1; transform: translateX(0); } 
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+  * { box-sizing: border-box; }
+  ::-webkit-scrollbar { width: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--color-border-secondary); border-radius: 4px; }
+  input:focus, textarea:focus { 
+    border-color: var(--color-border-primary) !important; 
+    box-shadow: 0 0 0 2px rgba(128,128,128,0.1); 
+  }
+`}</style>
 
       {/* ── Sidebar ── */}
       <aside style={{ width: 220, flexShrink: 0, background: "var(--color-background-primary)", borderRight: "0.5px solid var(--color-border-tertiary)", display: "flex", flexDirection: "column", padding: "20px 12px" }}>
@@ -722,12 +794,42 @@ const handleRestore = async (id) => {
         </nav>
 
         {/* Divider & info */}
-        <div style={{ marginTop: "auto", paddingTop: 16, borderTop: "0.5px solid var(--color-border-tertiary)" }}>
+        {/* <div style={{ marginTop: "auto", paddingTop: 16, borderTop: "0.5px solid var(--color-border-tertiary)" }}>
           <p style={{ margin: 0, fontSize: 10, color: "var(--color-text-tertiary)", lineHeight: 1.5 }}>
             {notes.filter(n => !n.deleted && !n.archived).length} active · {notes.filter(n => n.deleted).length} in trash
           </p>
           <p style={{ margin: "4px 0 0", fontSize: 10, color: "var(--color-text-tertiary)" }}>Trash clears after 24h</p>
-        </div>
+        </div> */}
+        <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 12 }}>
+
+  {/* Theme Toggle */}
+  <button
+    onClick={toggleTheme}
+    style={{
+      display: "flex", alignItems: "center", gap: 8, width: "100%",
+      padding: "8px 10px", borderRadius: "var(--border-radius-md)",
+      border: "0.5px solid var(--color-border-secondary)",
+      background: "var(--color-background-secondary)",
+      color: "var(--color-text-secondary)",
+      fontSize: 13, fontWeight: 400, cursor: "pointer",
+      transition: "background 0.12s ease",
+    }}
+    onMouseEnter={e => e.currentTarget.style.background = "var(--color-background-tertiary)"}
+    onMouseLeave={e => e.currentTarget.style.background = "var(--color-background-secondary)"}
+  >
+    {theme === "light" ? <Moon size={14} /> : <Sun size={14} />}
+    {theme === "light" ? "Dark Mode" : "Light Mode"}
+  </button>
+
+  {/* Info */}
+  <div style={{ paddingTop: 12, borderTop: "0.5px solid var(--color-border-tertiary)" }}>
+    <p style={{ margin: 0, fontSize: 10, color: "var(--color-text-tertiary)", lineHeight: 1.5 }}>
+      {notes.filter(n => !n.deleted && !n.archived).length} active · {notes.filter(n => n.deleted).length} in trash
+    </p>
+    <p style={{ margin: "4px 0 0", fontSize: 10, color: "var(--color-text-tertiary)" }}>Trash clears after 24h</p>
+  </div>
+
+</div>
       </aside>
 
       {/* ── Main ── */}
