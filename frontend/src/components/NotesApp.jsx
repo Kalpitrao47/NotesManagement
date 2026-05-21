@@ -7,9 +7,7 @@ import {
 } from "lucide-react";
 import { createNote, getNotes, permanentDelete, updateNote } from "../services/notesApi";
 
-// ═══════════════════════════════════════════════
-// MOCK API — in-memory REST simulation
-// ═══════════════════════════════════════════════
+
 const initialNotes = [
   { id: 1, title: "Shopping List", content: "Milk, Bread, Eggs, Butter, Coffee, Yogurt", archived: false, deleted: false, deletedAt: null, createdAt: "2026-05-18T10:00:00", updatedAt: "2026-05-18T10:00:00" },
   { id: 2, title: "Meeting Notes", content: "Discuss Q3 roadmap\nReview team capacity\nPlan sprint goals\nFinalize hiring budget", archived: false, deleted: false, deletedAt: null, createdAt: "2026-05-17T14:30:00", updatedAt: "2026-05-17T14:30:00" },
@@ -108,9 +106,7 @@ const getPreview = (content) => {
   return lines.slice(0, 2).join(" · ") || "No content";
 };
 
-// ═══════════════════════════════════════════════
-// TOAST NOTIFICATION
-// ═══════════════════════════════════════════════
+
 function Toast({ toasts, removeToast }) {
   return (
     <div style={{ position: "fixed", bottom: 24, right: 24, zIndex: 1000, display: "flex", flexDirection: "column", gap: 8 }}>
@@ -134,9 +130,7 @@ function Toast({ toasts, removeToast }) {
   );
 }
 
-// ═══════════════════════════════════════════════
-// NOTE EDITOR MODAL
-// ═══════════════════════════════════════════════
+
 function NoteModal({ note, onClose, onSave, loading }) {
   const [title, setTitle] = useState(note?.title || "");
   const [content, setContent] = useState(note?.content || "");
@@ -257,9 +251,7 @@ function NoteModal({ note, onClose, onSave, loading }) {
   );
 }
 
-// ═══════════════════════════════════════════════
-// NOTE CARD
-// ═══════════════════════════════════════════════
+
 function NoteCard({ note, onEdit, onDelete, onArchive, onRestore, onPermanentDelete, view }) {
   const [hovered, setHovered] = useState(false);
 
@@ -364,9 +356,7 @@ function ActionBtn({ icon, label, onClick, danger }) {
   );
 }
 
-// ═══════════════════════════════════════════════
-// EMPTY STATE
-// ═══════════════════════════════════════════════
+
 function EmptyState({ icon: Icon, title, description, action }) {
   return (
     <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "64px 24px", gap: 12, textAlign: "center" }}>
@@ -382,9 +372,7 @@ function EmptyState({ icon: Icon, title, description, action }) {
   );
 }
 
-// ═══════════════════════════════════════════════
-// MAIN APP
-// ═══════════════════════════════════════════════
+
 export default function NotesApp() {
   const [notes, setNotes] = useState([]);
   const [view, setView] = useState("all"); // all | archived | trash
